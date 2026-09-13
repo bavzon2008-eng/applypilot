@@ -331,6 +331,31 @@ with st.sidebar:
     st.caption("🔒 Human-in-the-loop: ApplyPilot never performs the final application submission automatically.")
 
 
+def build_personalized_cover_letter(profile, opportunity):
+    """Create a cover letter from the current user's actual profile."""
+    name = (profile.get("name") or "Candidate").strip()
+    education = (profile.get("education") or "").strip()
+    skills = [str(s).strip() for s in (profile.get("skills") or []) if str(s).strip()]
+    goal = (profile.get("goal") or "").strip()
+    title = (opportunity.get("title") or "this opportunity").strip()
+    company = (opportunity.get("company") or "your organization").strip()
+    location = (profile.get("location") or "").strip()
+    skill_text = ", ".join(skills) if skills else "my technical skills"
+    education_text = education or "my current academic background"
+    goal_text = goal or "this opportunity"
+    location_line = f" I am currently seeking opportunities in {location}." if location else ""
+    return (
+        f"Dear Hiring Team at {company},\n\n"
+        f"I am {name}, currently pursuing {education_text}, and I am excited to apply for {title}. "
+        f"I am specifically looking for {goal_text}.{location_line}\n\n"
+        f"My relevant skills include {skill_text}. I am eager to apply these skills to meaningful work, "
+        f"learn from your team, and contribute to the goals of {company}.\n\n"
+        f"I would welcome the opportunity to discuss how my background and skills could contribute to this role. "
+        f"Thank you for considering my application.\n\n"
+        f"Best regards,\n{name}"
+    )
+
+
 def build_profile():
     return {
         "name": name.strip(),
@@ -389,6 +414,16 @@ for i, (key, number, icon, title, desc) in enumerate(stages):
         st.markdown(f'<div class="stage {cls}"><div class="stage-num">{mark} STAGE {number}</div><div class="stage-title">{icon} {title}</div><div class="stage-desc">{desc}</div></div>', unsafe_allow_html=True)
 
 st.write("")
+st.markdown(
+    """<div class="search-hero">
+        <div class="search-target">🧭 How to use ApplyPilot</div>
+        <div class="small" style="margin-top:.45rem;line-height:1.7">
+            <b>1.</b> Fill every Candidate Profile field on the left → <b>2.</b> Run Live Discovery → <b>3.</b> Choose an opportunity and click <b>Build Mission</b> → <b>4.</b> Tick <b>every checklist item</b> → <b>5.</b> Tick <b>Human approval</b> → <b>6.</b> Click <b>Start Anakin Browser Agent</b>.
+        </div>
+        <div class="small" style="margin-top:.55rem">💡 <b>Nothing is submitted automatically.</b> ApplyPilot always stops before final submission.</div>
+    </div>""",
+    unsafe_allow_html=True,
+)
 
 # Clear, persistent feedback after Build Mission so the user knows
 # exactly what happened and where the generated mission is located.
@@ -396,7 +431,7 @@ if st.session_state.mission_built and st.session_state.mission and st.session_st
     st.markdown(
         '''<div class="mission-alert">
             <div class="mission-alert-title">📋 Application Mission is ready</div>
-            <div class="mission-alert-text">Your personalized mission was built successfully. Scroll down to review the match, eligibility, resume suggestions, cover letter and checklist.</div>
+            <div class="mission-alert-text">Your mission is ready. Next: review the details → tick <b>every checklist item</b> → tick <b>Human approval</b> → then use the <b>Start Anakin Browser Agent</b> button.</div>
             <a class="jump-link" href="#application-mission">↓ Jump to Application Mission</a>
         </div>''',
         unsafe_allow_html=True,
@@ -529,19 +564,17 @@ if opportunity and mission:
         st.markdown(f"✓ {suggestion}")
 
     st.markdown("#### ✍️ Personalized cover letter")
-    # Ensure the candidate's name is visibly used in the application draft.
-    # This keeps the mission personalized even when the reasoning model returns
-    # a generic cover-letter draft.
-    cover_letter = mission.get("cover_letter", "") or ""
+    # Always generate the visible cover letter from the CURRENT user's profile.
     candidate_name = (profile.get("name") or "Candidate").strip()
-    if candidate_name and candidate_name.lower() not in cover_letter.lower():
-        cover_letter = cover_letter.rstrip() + f"\n\nBest regards,\n{candidate_name}"
-    st.text_area("Review and edit before using", value=cover_letter, height=230, key="cover_letter_preview")
-    st.caption(f"✍️ Prepared for {candidate_name} — your name is included in the application draft.")
+    cover_letter = build_personalized_cover_letter(profile, opportunity)
+    st.text_area("Review and edit before using", value=cover_letter, height=260, key="cover_letter_preview")
+    st.caption(f"✍️ Personalized for {candidate_name} using the education, skills, search target and location entered in this session.")
 
     st.markdown("#### ✅ Mission checklist")
+    checklist_items = mission.get("checklist", []) or []
+    st.info(f"☑️ Step 1 of 2: Review and tick all {len(checklist_items)} checklist item(s) below. Then complete the Human approval checkbox. The browser agent unlocks only after both are complete.")
     checklist_complete = True
-    for index, task in enumerate(mission.get("checklist", []) or []):
+    for index, task in enumerate(checklist_items):
         checked = st.checkbox(task, key=f"mission_check_{index}")
         if not checked:
             checklist_complete = False
@@ -552,10 +585,13 @@ if opportunity and mission:
     st.markdown("#### 🛡️ Human approval")
     st.warning("Approve only after reviewing the opportunity and preparation. ApplyPilot will navigate the live page but will never submit the final application automatically.")
     approval = st.checkbox("I reviewed this opportunity and authorize ApplyPilot to continue.", key="approval_checkbox")
-    if approval and not checklist_complete:
-        st.info("Complete the mission checklist before starting the browser agent.")
-    elif approval and checklist_complete:
-        if st.button("🚀 Approve & Start Agent", type="primary", use_container_width=True):
+    if not checklist_complete:
+        st.caption("🔒 Step 2 is locked until every mission checklist item above is ticked.")
+    elif not approval:
+        st.info("☑️ **Step 2 of 2:** The mission checklist is complete. Tick the Human approval box above to unlock the agent start button.")
+    else:
+        st.success("✓ **Ready:** Checklist complete + Human approval complete.")
+        if st.button("🚀 Start Anakin Browser Agent", type="primary", use_container_width=True):
             st.session_state.approved = True
             st.session_state.current_stage = "act"
             st.session_state.browser_result = None
@@ -579,6 +615,7 @@ if st.session_state.approved and opportunity and application_url:
             with col:
                 st.markdown(f'<div class="stage"><div class="stage-num">STEP {n}</div><div class="stage-title">{icon} {title}</div></div>', unsafe_allow_html=True)
         st.write("")
+        st.info("🚀 **Final step:** Click the button below to let Anakin open and inspect the live opportunity. ApplyPilot will stop before final submission.")
         if st.button("🌐 Start Anakin Browser Agent", type="primary", use_container_width=True):
             with st.spinner("🤖 Anakin is inspecting the live opportunity..."):
                 try:
