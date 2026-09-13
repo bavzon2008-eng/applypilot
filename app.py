@@ -12,6 +12,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Hide Streamlit's native developer/toolbar controls for normal viewers.
+# ApplyPilot provides its own product UI instead.
+st.set_option("client.toolbarMode", "minimal")
+
 # ------------------------------------------------------------------
 # PREMIUM DARK UI
 # ------------------------------------------------------------------
@@ -156,17 +160,14 @@ st.markdown(
     }
     /* ================================================================
        SIDEBAR NAVIGATION — ALWAYS VISIBLE
-       Streamlit's native collapsed-sidebar control can be nearly
-       invisible until hover. Make the actual header control obvious.
-       The control is the navigation entry point for first-time users.
+       Keep the native sidebar control obvious, but do not target
+       button[kind="header"] because Streamlit also uses that selector
+       for its top-right toolbar controls.
        ================================================================ */
     [data-testid="stSidebarCollapseButton"],
     [data-testid="stSidebarCollapseButton"] button,
     [data-testid="stSidebarCollapsedControl"],
-    [data-testid="stSidebarCollapsedControl"] button,
-    button[aria-label*="sidebar" i],
-    button[title*="sidebar" i],
-    button[kind="header"] {
+    [data-testid="stSidebarCollapsedControl"] button {
         visibility: visible !important;
         display: flex !important;
         pointer-events: auto !important;
@@ -186,10 +187,7 @@ st.markdown(
     [data-testid="stSidebarCollapseButton"] *,
     [data-testid="stSidebarCollapseButton"] button *,
     [data-testid="stSidebarCollapsedControl"] *,
-    [data-testid="stSidebarCollapsedControl"] button *,
-    button[aria-label*="sidebar" i] *,
-    button[title*="sidebar" i],
-    button[kind="header"] * {
+    [data-testid="stSidebarCollapsedControl"] button * {
         color:#ffffff !important;
         fill:#ffffff !important;
         stroke:#ffffff !important;
@@ -199,40 +197,15 @@ st.markdown(
     [data-testid="stSidebarCollapseButton"] svg,
     [data-testid="stSidebarCollapseButton"] svg path,
     [data-testid="stSidebarCollapsedControl"] svg,
-    [data-testid="stSidebarCollapsedControl"] svg path,
-    button[kind="header"] svg,
-    button[kind="header"] svg path {
+    [data-testid="stSidebarCollapsedControl"] svg path {
         color:#ffffff !important;
         fill:#ffffff !important;
         stroke:#ffffff !important;
         opacity:1 !important;
     }
 
-    /* On the collapsed view, turn the tiny native chevron into a clear
-       navigation affordance. The native button remains clickable. */
-    button[kind="header"] {
-        width: 118px !important;
-        padding: 0 12px !important;
-    }
-    button[kind="header"]::after {
-        content: "☰  MENU" !important;
-        display: block !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        font-size: 13px !important;
-        font-weight: 900 !important;
-        letter-spacing: .5px !important;
-        line-height: 1 !important;
-        white-space: nowrap !important;
-    }
-    button[kind="header"] svg {
-        width: 18px !important;
-        height: 18px !important;
-        margin-right: 7px !important;
-    }
-
     [data-testid="stSidebarCollapsedControl"] button:hover,
-    button[kind="header"]:hover {
+    [data-testid="stSidebarCollapseButton"] button:hover {
         background: linear-gradient(135deg, #927bff 0%, #704ee8 100%) !important;
         border-color: #ffffff !important;
         transform: translateY(-1px) !important;
@@ -319,7 +292,7 @@ for key, value in defaults.items():
 # ------------------------------------------------------------------
 with st.sidebar:
     st.markdown("## 👤 Candidate Profile")
-    name = st.text_input("Full name", placeholder="Your full name", value="Bavana Saravanan")
+    name = st.text_input("Full name", placeholder="Your full name", value="")
     education = st.text_input("Education", value="3rd-year B.Tech Computer Science student")
     skills_text = st.text_area("Skills", value="Python, Java, React, SQL", help="Separate skills with commas.")
     location = st.text_input("Location preference", value="India / Remote")
@@ -333,7 +306,14 @@ with st.sidebar:
     )
 
     st.caption("Your name personalizes missions and application drafts. It is not used to decide which company is a better match.")
-    find_button = st.button("✦ Run Live Discovery", type="primary", use_container_width=True)
+    if not name.strip():
+        st.caption("✍️ Enter your name to unlock live discovery and personalized application preparation.")
+    find_button = st.button(
+        "✦ Run Live Discovery",
+        type="primary",
+        use_container_width=True,
+        disabled=not name.strip(),
+    )
 
     st.markdown("---")
     st.caption("🔒 Human-in-the-loop: ApplyPilot never performs the final application submission automatically.")
@@ -541,7 +521,7 @@ if opportunity and mission:
     # This keeps the mission personalized even when the reasoning model returns
     # a generic cover-letter draft.
     cover_letter = mission.get("cover_letter", "") or ""
-    candidate_name = (profile.get("name") or "Bavana Saravanan").strip()
+    candidate_name = (profile.get("name") or "Candidate").strip()
     if candidate_name and candidate_name.lower() not in cover_letter.lower():
         cover_letter = cover_letter.rstrip() + f"\n\nBest regards,\n{candidate_name}"
     st.text_area("Review and edit before using", value=cover_letter, height=230, key="cover_letter_preview")
