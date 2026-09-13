@@ -247,6 +247,11 @@ st.markdown(
         -webkit-text-fill-color: #eaf2ff !important;
     }
     /* Mission notification */
+    .result-alert { background: linear-gradient(135deg, rgba(34,211,238,.12), rgba(124,92,255,.13)); border: 1px solid rgba(34,211,238,.35); border-radius: 18px; padding: 1rem 1.15rem; margin: .9rem 0 1.2rem; box-shadow: 0 10px 30px rgba(0,0,0,.16); }
+    .result-alert-title { font-size: 1.08rem; font-weight: 800; }
+    .result-alert-text { color: #c8d6e8; margin-top: .3rem; line-height: 1.55; }
+    .result-alert .jump-link { display: inline-block; margin-top: .65rem; color: #8be9ff !important; font-weight: 800; text-decoration: none; }
+    .result-alert .jump-link:hover { text-decoration: underline; }
     .mission-alert {
         margin: 1rem 0 1.2rem;
         padding: 1rem 1.2rem;
@@ -282,6 +287,8 @@ defaults = {
     "current_stage": "discover",
     "profile_snapshot": None,
     "mission_built": False,
+    "discovery_just_completed": False,
+    "browser_just_completed": False,
 }
 for key, value in defaults.items():
     if key not in st.session_state:
@@ -454,16 +461,31 @@ if find_button:
         st.session_state.approved = False
         st.session_state.browser_result = None
         st.session_state.mission_built = False
+        st.session_state.discovery_just_completed = False
+        st.session_state.browser_just_completed = False
         st.session_state.current_stage = "analyze"
         with st.spinner("✦ ApplyPilot is searching the live web and reasoning about your target..."):
             try:
                 st.session_state.recommendations = cached_discovery(profile)
+                st.session_state.discovery_just_completed = True
             except Exception as exc:
                 st.error(f"Agent error: {exc}")
 
 result = st.session_state.recommendations
 
+if st.session_state.discovery_just_completed and result:
+    st.markdown(
+        '''<div class="result-alert">
+            <div class="result-alert-title">✅ Live Discovery complete</div>
+            <div class="result-alert-text">ApplyPilot found and ranked your opportunities. <b>Your results are displayed below.</b> Scroll down or use the button to jump directly to them.</div>
+            <a class="jump-link" href="#discovery-results">↓ Jump to Discovery Results</a>
+        </div>''',
+        unsafe_allow_html=True,
+    )
+    st.session_state.discovery_just_completed = False
+
 if result:
+    st.markdown('<div id="discovery-results"></div>', unsafe_allow_html=True)
     profile = st.session_state.profile_snapshot or build_profile()
     recommendations = result.get("recommendations", [])
     stats = result.get("search_stats", {})
@@ -603,7 +625,18 @@ if opportunity and mission:
 # ------------------------------------------------------------------
 application_url = opportunity.get("url") if opportunity else None
 if st.session_state.approved and opportunity and application_url:
+    if st.session_state.browser_just_completed and st.session_state.browser_result:
+        st.markdown(
+            '''<div class="result-alert">
+                <div class="result-alert-title">🤖 Anakin Browser Agent finished</div>
+                <div class="result-alert-text">The browser agent has completed its inspection. <b>Your agent results are displayed below.</b> Scroll down or use the button to jump directly to them.</div>
+                <a class="jump-link" href="#agent-action-center">↓ Jump to Agent Results</a>
+            </div>''',
+            unsafe_allow_html=True,
+        )
+        st.session_state.browser_just_completed = False
     st.divider()
+    st.markdown('<div id="agent-action-center"></div>', unsafe_allow_html=True)
     st.markdown("## 🤖 Agent Action Center")
     st.markdown('<div class="action-box"><b>ApplyPilot is acting on your behalf</b><br><span class="muted">Open → Read → Understand → Inspect → Stop before final submission.</span></div>', unsafe_allow_html=True)
     st.write("")
@@ -621,6 +654,7 @@ if st.session_state.approved and opportunity and application_url:
             with st.spinner("🤖 Anakin is inspecting the live opportunity..."):
                 try:
                     st.session_state.browser_result = inspect_and_open_application(application_url)
+                    st.session_state.browser_just_completed = True
                     st.session_state.current_stage = "review"
                     st.rerun()
                 except Exception as exc:
