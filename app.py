@@ -292,41 +292,9 @@ for key, value in defaults.items():
 # ------------------------------------------------------------------
 with st.sidebar:
     st.markdown("## 👤 Candidate Profile")
-    name = st.text_input("Full name", placeholder="Your full name", value="")
-    education = st.text_input("Education", value="", placeholder="e.g. 3rd-year B.Tech Computer Science")
-    skills_text = st.text_area("Skills", value="", placeholder="e.g. Python, Java, React, SQL", help="Separate skills with commas.")
-    location = st.text_input("Location preference", value="", placeholder="e.g. India / Remote")
-
-    st.markdown("### 🎯 Search target")
-    goal = st.text_area(
-        "What are you looking for?",
-        value="",
-        placeholder="e.g. AI internships, frontend jobs, data science roles",
-        height=90,
-        help="This is the main search intent. Changing it changes the Anakin search queries.",
-    )
-
-    st.caption("All profile details are entered by the user and are used for opportunity matching and personalized application preparation.")
-    missing_fields = []
-    if not name.strip():
-        missing_fields.append("full name")
-    if not education.strip():
-        missing_fields.append("education")
-    if not skills_text.strip():
-        missing_fields.append("skills")
-    if not location.strip():
-        missing_fields.append("location preference")
-    if not goal.strip():
-        missing_fields.append("search target")
-    if missing_fields:
-        st.caption("✍️ Fill in " + ", ".join(missing_fields) + " to unlock live discovery.")
-    find_button = st.button(
-        "✦ Run Live Discovery",
-        type="primary",
-        use_container_width=True,
-        disabled=bool(missing_fields),
-    )
-
+    st.markdown("### ✨ Start here")
+    st.caption("Fill in your profile in the main panel. Your details stay empty until you enter them.")
+    st.markdown("👈 **Use the Candidate Profile panel in the main workspace.**")
     st.markdown("---")
     st.caption("🔒 Human-in-the-loop: ApplyPilot never performs the final application submission automatically.")
 
@@ -380,19 +348,52 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Visible profile control in the main workspace, even when the sidebar is collapsed.
-profile_left, profile_right = st.columns([6, 1])
-with profile_left:
-    st.markdown('<div class="topbar-sub">🎯 Your search target drives live discovery. Update it anytime from the profile.</div>', unsafe_allow_html=True)
-with profile_right:
-    with st.popover("👤 Candidate Profile", use_container_width=True):
-        st.markdown('<div class="profile-popover"><b>Candidate profile</b><br><span class="small">Used for opportunity matching and personalized application preparation.</span></div>', unsafe_allow_html=True)
-        st.write("")
-        st.write(f"**Name:** {name or 'Not provided'}")
-        st.write(f"**Education:** {education}")
-        st.write(f"**Skills:** {skills_text}")
-        st.write(f"**Location:** {location}")
-        st.write(f"**Search target:** {goal}")
+# ------------------------------------------------------------------
+# START HERE — MAIN PROFILE
+# ------------------------------------------------------------------
+# Keep the editable profile in the main workspace so first-time users can
+# see it immediately, even if Streamlit remembers a collapsed sidebar.
+st.markdown("### 👋 Start here")
+st.markdown(
+    '<div class="search-hero"><div class="search-target">👤 Step 1 — Complete your Candidate Profile</div>'
+    '<div class="small" style="margin-top:.4rem;line-height:1.7">Enter your own details below. All fields start blank for every new user. These details are used for live opportunity matching and personalized application preparation.</div></div>',
+    unsafe_allow_html=True,
+)
+
+with st.expander("👤 Candidate Profile — fill this first", expanded=True):
+    profile_col1, profile_col2 = st.columns(2)
+    with profile_col1:
+        name = st.text_input("Full name", placeholder="Your full name", value="", key="main_name")
+        education = st.text_input("Education", value="", placeholder="e.g. Final-year BCA", key="main_education")
+        location = st.text_input("Location preference", value="", placeholder="e.g. Chennai / India / Remote", key="main_location")
+    with profile_col2:
+        skills_text = st.text_area("Skills", value="", placeholder="e.g. Python, Java, React, SQL", help="Separate skills with commas.", key="main_skills")
+        goal = st.text_area("What are you looking for?", value="", placeholder="e.g. AI internships, frontend jobs, data science roles", height=90, help="This is the main search intent. Changing it changes the Anakin search queries.", key="main_goal")
+
+    missing_fields = []
+    if not name.strip():
+        missing_fields.append("full name")
+    if not education.strip():
+        missing_fields.append("education")
+    if not skills_text.strip():
+        missing_fields.append("skills")
+    if not location.strip():
+        missing_fields.append("location preference")
+    if not goal.strip():
+        missing_fields.append("search target")
+
+    if missing_fields:
+        st.info("✍️ Complete all five profile fields above to unlock Live Discovery. Missing: " + ", ".join(missing_fields) + ".")
+    else:
+        st.success("✓ Candidate Profile complete — you can now run Live Discovery.")
+
+    find_button = st.button(
+        "✦ Run Live Discovery",
+        type="primary",
+        use_container_width=True,
+        disabled=bool(missing_fields),
+        key="main_discovery_button",
+    )
 
 st.write("")
 
@@ -418,7 +419,7 @@ st.markdown(
     """<div class="search-hero">
         <div class="search-target">🧭 How to use ApplyPilot</div>
         <div class="small" style="margin-top:.45rem;line-height:1.7">
-            <b>1.</b> Fill every Candidate Profile field on the left → <b>2.</b> Run Live Discovery → <b>3.</b> Choose an opportunity and click <b>Build Mission</b> → <b>4.</b> Tick <b>every checklist item</b> → <b>5.</b> Tick <b>Human approval</b> → <b>6.</b> Click <b>Start Anakin Browser Agent</b>.
+            <b>1.</b> Open <b>Candidate Profile — fill this first</b> above and complete every field → <b>2.</b> Run Live Discovery → <b>3.</b> Choose an opportunity and click <b>Build Mission</b> → <b>4.</b> Tick <b>every checklist item</b> → <b>5.</b> Tick <b>Human approval</b> → <b>6.</b> Click <b>Start Anakin Browser Agent</b>.
         </div>
         <div class="small" style="margin-top:.55rem">💡 <b>Nothing is submitted automatically.</b> ApplyPilot always stops before final submission.</div>
     </div>""",
