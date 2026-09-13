@@ -1,6 +1,9 @@
 # 🚀 ApplyPilot
 
 ### An Autonomous AI Agent That Turns Job Opportunities Into Application-Ready Missions
+🌐 **Live Demo:** [Launch ApplyPilot](https://applypilot-bymnrcxa2a7yrmycwfqx8h.streamlit.app/)
+
+🤖 **Built with:** Anakin.io + OpenRouter + Streamlit + Playwright
 
 **ApplyPilot** is an AI-powered job discovery and application-preparation agent built for the **Anakin Forge Hackathon — Build AI Agents That Read, Reason, and Act**.
 
