@@ -293,26 +293,38 @@ for key, value in defaults.items():
 with st.sidebar:
     st.markdown("## 👤 Candidate Profile")
     name = st.text_input("Full name", placeholder="Your full name", value="")
-    education = st.text_input("Education", value="3rd-year B.Tech Computer Science student")
-    skills_text = st.text_area("Skills", value="Python, Java, React, SQL", help="Separate skills with commas.")
-    location = st.text_input("Location preference", value="India / Remote")
+    education = st.text_input("Education", value="", placeholder="e.g. 3rd-year B.Tech Computer Science")
+    skills_text = st.text_area("Skills", value="", placeholder="e.g. Python, Java, React, SQL", help="Separate skills with commas.")
+    location = st.text_input("Location preference", value="", placeholder="e.g. India / Remote")
 
     st.markdown("### 🎯 Search target")
     goal = st.text_area(
         "What are you looking for?",
-        value="AI and software engineering internships",
+        value="",
+        placeholder="e.g. AI internships, frontend jobs, data science roles",
         height=90,
         help="This is the main search intent. Changing it changes the Anakin search queries.",
     )
 
-    st.caption("Your name personalizes missions and application drafts. It is not used to decide which company is a better match.")
+    st.caption("All profile details are entered by the user and are used for opportunity matching and personalized application preparation.")
+    missing_fields = []
     if not name.strip():
-        st.caption("✍️ Enter your name to unlock live discovery and personalized application preparation.")
+        missing_fields.append("full name")
+    if not education.strip():
+        missing_fields.append("education")
+    if not skills_text.strip():
+        missing_fields.append("skills")
+    if not location.strip():
+        missing_fields.append("location preference")
+    if not goal.strip():
+        missing_fields.append("search target")
+    if missing_fields:
+        st.caption("✍️ Fill in " + ", ".join(missing_fields) + " to unlock live discovery.")
     find_button = st.button(
         "✦ Run Live Discovery",
         type="primary",
         use_container_width=True,
-        disabled=not name.strip(),
+        disabled=bool(missing_fields),
     )
 
     st.markdown("---")
